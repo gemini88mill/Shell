@@ -1,8 +1,21 @@
 ﻿using Spectre.Console;
 using Shell;
+using Shell.Commands;
 
 bool isRunning = true;
 var commandHistory = new List<string>();
+
+// Register commands
+var commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase)
+{
+    ["echo"] = new EchoCommand(),
+    ["time"] = new TimeCommand(),
+    ["calc"] = new CalcCommand(),
+    ["file"] = new FileCommand(),
+    ["dir"] = new DirCommand(),
+    ["pwd"] = new PwdCommand(),
+    ["cd"] = new CdCommand(),
+};
 
 AnsiConsole.Write(new FigletText("rsh").Color(Color.Blue));
 Logger.Info("Welcome to the Shell REPL! Type help for available commands or exit to quit.");
@@ -54,147 +67,15 @@ void ExecuteCommand(string[] args)
 {
     if (args.Length == 0) return;
 
-    var command = args[0].ToLowerInvariant();
-
-    switch (command)
+    var commandKey = args[0];
+    if (commands.TryGetValue(commandKey, out var cmd))
     {
-        case "echo":
-            if (args.Length > 1)
-            {
-                var text = string.Join(" ", args.Skip(1));
-                Logger.Info(text);
-            }
-            else
-            {
-                Logger.Warning("Usage: echo <text>");
-            }
-            break;
-
-        case "time":
-            var now = DateTime.Now;
-            Logger.Info($"Current time: {now:yyyy-MM-dd HH:mm:ss}");
-            break;
-
-        case "calc":
-            if (args.Length > 1)
-            {
-                var expression = string.Join(" ", args.Skip(1));
-                try
-                {
-                    var result = EvaluateExpression(expression);
-                    Logger.Success($"{expression} = {result}");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Error evaluating expression: {ex.Message}");
-                }
-            }
-            else
-            {
-                Logger.Warning("Usage: calc <expression>");
-            }
-            break;
-
-        case "file":
-            if (args.Length > 1)
-            {
-                var filePath = args[1];
-                try
-                {
-                    var fileInfo = new FileInfo(filePath);
-                    if (fileInfo.Exists)
-                    {
-                        var table = new Table();
-                        table.AddColumn("Property");
-                        table.AddColumn("Value");
-
-                        table.AddRow("Name", fileInfo.Name);
-                        table.AddRow("Full Path", fileInfo.FullName);
-                        table.AddRow("Size", $"{fileInfo.Length:N0} bytes");
-                        table.AddRow("Created", fileInfo.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                        table.AddRow("Modified", fileInfo.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"));
-
-                        AnsiConsole.Write(table);
-                    }
-                    else
-                    {
-                        Logger.Error($"File not found: {fileInfo.FullName}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Error accessing file: {ex.Message}");
-                }
-            }
-            else
-            {
-                Logger.Warning("Usage: file <path>");
-            }
-            break;
-
-        case "dir":
-            var targetPath = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
-            try
-            {
-                var dirInfo = new DirectoryInfo(targetPath);
-                if (dirInfo.Exists)
-                {
-                    var table = new Table();
-                    table.AddColumn("Name");
-                    table.AddColumn("Type");
-                    table.AddColumn("Size");
-                    table.AddColumn("Modified");
-
-                    foreach (var item in dirInfo.GetFileSystemInfos().OrderBy(x => x.Name))
-                    {
-                        var type = item is DirectoryInfo ? "[blue]DIR[/]" : "[green]FILE[/]";
-                        var size = item is FileInfo file ? $"{file.Length:N0} bytes" : "";
-                        var modified = item.LastWriteTime.ToString("yyyy-MM-dd HH:mm");
-
-                        table.AddRow(item.Name, type, size, modified);
-                    }
-
-                    AnsiConsole.Write(table);
-                }
-                else
-                {
-                    Logger.Error($"Directory not found: {dirInfo.FullName}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error accessing directory: {ex.Message}");
-            }
-            break;
-
-        case "pwd":
-            Logger.Info($"Current directory: {Directory.GetCurrentDirectory()}");
-            break;
-
-        case "cd":
-            if (args.Length > 1)
-            {
-                try
-                {
-                    Directory.SetCurrentDirectory(args[1]);
-                    Logger.Success($"Changed to: {Directory.GetCurrentDirectory()}");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Error changing directory: {ex.Message}");
-                }
-            }
-            else
-            {
-                Logger.Info($"Current directory: {Directory.GetCurrentDirectory()}");
-            }
-            break;
-
-        default:
-            Logger.Error($"Unknown command: {command}");
-            Logger.Warning("Type 'help' for available commands");
-            break;
+        cmd.Execute(args);
+        return;
     }
+
+    Logger.Error($"Unknown command: {commandKey}");
+    Logger.Warning("Type 'help' for available commands");
 }
 
 bool HandleReplCommand(string input)
