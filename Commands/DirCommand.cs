@@ -6,6 +6,7 @@ public class DirCommand : ICommand
 {
     public string Name => "dir";
     public string Description => "List directory contents";
+    public string[] Aliases => new[] { "ls" };
 
     public void Execute(string[] args)
     {

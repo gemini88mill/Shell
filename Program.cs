@@ -18,6 +18,19 @@ var commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase
     ["cd"] = new CdCommand(),
 };
 
+// Register aliases for all commands
+foreach (var cmd in commands.Values.ToList())
+{
+    if (cmd.Aliases is null) continue;
+    foreach (var alias in cmd.Aliases)
+    {
+        if (!string.IsNullOrWhiteSpace(alias) && !commands.ContainsKey(alias))
+        {
+            commands[alias] = cmd;
+        }
+    }
+}
+
 AnsiConsole.Write(new FigletText("rsh").Color(Color.Blue));
 Logger.Info("Welcome to the Shell REPL! Type help for available commands or exit to quit.");
 Logger.NewLine();
