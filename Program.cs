@@ -1,6 +1,7 @@
 ﻿using Spectre.Console;
 using Shell;
 using Shell.Commands;
+using Shell.Utils;
 
 bool isRunning = true;
 var commandHistory = new List<string>();
@@ -26,7 +27,7 @@ while (isRunning)
     try
     {
         // Get user input with a styled prompt
-        var input = Logger.Ask($"rsh {Directory.GetCurrentDirectory()}>");
+        var input = Logger.Ask($"{PromptUtils.FormatPrompt()}");
 
         if (string.IsNullOrEmpty(input))
         {

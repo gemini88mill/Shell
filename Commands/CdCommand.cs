@@ -12,7 +12,6 @@ public class CdCommand : ICommand
             try
             {
                 Directory.SetCurrentDirectory(args[1]);
-                Logger.Success($"Changed to: {Directory.GetCurrentDirectory()}");
             }
             catch (Exception ex)
             {

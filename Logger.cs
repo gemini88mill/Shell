@@ -42,8 +42,8 @@ namespace Shell
     /// <returns>The user's input as a string, or empty string if no input available</returns>
     public static string Ask(string prompt)
     {
-      AnsiConsole.Markup($"[bold blue]{prompt}[/] ");
-      return Console.ReadLine()?.Trim() ?? "";
+      
+      return AnsiConsole.Prompt(new TextPrompt<string>($"{prompt}"));
     }
 
     /// <summary>
