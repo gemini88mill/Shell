@@ -26,88 +26,95 @@ public class CalcCommand : ICommand
         }
     }
 
-    // Local evaluator copied from Program.cs for isolation
     private double EvaluateExpression(string expression)
     {
-        // Very basic expression evaluator supporting +, -, *, / and parentheses
-        var tokens = Tokenize(expression);
-        var pos = 0;
+        // Simple expression evaluator - handles basic arithmetic
+        expression = expression.Replace(" ", "");
 
-        double ParseExpression()
+        // Handle parentheses
+        while (expression.Contains('('))
         {
-            double value = ParseTerm();
-            while (pos < tokens.Count)
-            {
-                var op = tokens[pos];
-                if (op == "+" || op == "-")
-                {
-                    pos++;
-                    var right = ParseTerm();
-                    value = op == "+" ? value + right : value - right;
-                }
-                else break;
-            }
-            return value;
+            var start = expression.LastIndexOf('(');
+            var end = expression.IndexOf(')', start);
+            if (end == -1) throw new ArgumentException("Mismatched parentheses");
+
+            var subExpression = expression.Substring(start + 1, end - start - 1);
+            var result = EvaluateSimpleExpression(subExpression);
+            expression = expression.Substring(0, start) + result + expression.Substring(end + 1);
         }
 
-        double ParseTerm()
-        {
-            double value = ParseFactor();
-            while (pos < tokens.Count)
-            {
-                var op = tokens[pos];
-                if (op == "*" || op == "/")
-                {
-                    pos++;
-                    var right = ParseFactor();
-                    value = op == "*" ? value * right : value / right;
-                }
-                else break;
-            }
-            return value;
-        }
-
-        double ParseFactor()
-        {
-            if (pos >= tokens.Count) throw new Exception("Unexpected end of expression");
-            var token = tokens[pos++];
-            if (token == "+") return ParseFactor();
-            if (token == "-") return -ParseFactor();
-            if (token == "(")
-            {
-                var value = ParseExpression();
-                if (pos >= tokens.Count || tokens[pos] != ")") throw new Exception("Missing closing parenthesis");
-                pos++;
-                return value;
-            }
-            if (double.TryParse(token, out var number)) return number;
-            throw new Exception($"Invalid token: {token}");
-        }
-
-        return ParseExpression();
+        return EvaluateSimpleExpression(expression);
     }
 
-    private List<string> Tokenize(string expression)
+    private double EvaluateSimpleExpression(string expression)
     {
-        var tokens = new List<string>();
-        var current = "";
-        foreach (var c in expression)
+        // Handle multiplication and division first
+        var parts = expression.Split(new[] { '+', '-' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
         {
-            if (char.IsWhiteSpace(c))
-            {
-                if (current.Length > 0) { tokens.Add(current); current = ""; }
-            }
-            else if ("+-*/()".Contains(c))
-            {
-                if (current.Length > 0) { tokens.Add(current); current = ""; }
-                tokens.Add(c.ToString());
-            }
+            return EvaluateMultiplicationDivision(expression);
+        }
+
+        var result = EvaluateMultiplicationDivision(parts[0]);
+        var currentIndex = parts[0].Length;
+
+        for (int i = 1; i < parts.Length; i++)
+        {
+            var operatorIndex = currentIndex;
+            while (operatorIndex < expression.Length && expression[operatorIndex] != '+' && expression[operatorIndex] != '-')
+                operatorIndex++;
+
+            if (operatorIndex >= expression.Length) break;
+
+            var op = expression[operatorIndex];
+            var value = EvaluateMultiplicationDivision(parts[i]);
+
+            if (op == '+')
+                result += value;
+            else
+                result -= value;
+
+            currentIndex = operatorIndex + 1 + parts[i].Length;
+        }
+
+        return result;
+    }
+
+    private double EvaluateMultiplicationDivision(string expression)
+    {
+        var parts = expression.Split(new[] { '*', '/' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+        {
+            if (double.TryParse(parts[0], out var value))
+                return value;
+            throw new ArgumentException($"Invalid number: {parts[0]}");
+        }
+
+        var result = double.Parse(parts[0]);
+        var currentIndex = parts[0].Length;
+
+        for (int i = 1; i < parts.Length; i++)
+        {
+            var operatorIndex = currentIndex;
+            while (operatorIndex < expression.Length && expression[operatorIndex] != '*' && expression[operatorIndex] != '/')
+                operatorIndex++;
+
+            if (operatorIndex >= expression.Length) break;
+
+            var op = expression[operatorIndex];
+            var value = double.Parse(parts[i]);
+
+            if (op == '*')
+                result *= value;
             else
             {
-                current += c;
+                if (value == 0) throw new ArgumentException("Division by zero");
+                result /= value;
             }
+
+            currentIndex = operatorIndex + 1 + parts[i].Length;
         }
-        if (current.Length > 0) tokens.Add(current);
-        return tokens;
+
+        return result;
     }
 }

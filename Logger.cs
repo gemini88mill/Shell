@@ -1,4 +1,5 @@
 using Spectre.Console;
+using System.Text;
 
 namespace Shell
 {
@@ -8,13 +9,26 @@ namespace Shell
   /// </summary>
   public static class Logger
   {
+    private static StringBuilder? _captureBuffer;
     /// <summary>
     /// Outputs basic informational messages to the console.
     /// </summary>
     /// <param name="message">The message to display</param>
     public static void Info(string message)
     {
-      AnsiConsole.MarkupLine($"[green]{message}[/]");
+      var formattedMessage = $"[green]{message}[/]";
+
+      if (_captureBuffer != null)
+      {
+        // Only capture to file, don't display to console
+        var plainText = Markup.Remove(formattedMessage);
+        _captureBuffer.AppendLine(plainText);
+      }
+      else
+      {
+        // Normal console output
+        AnsiConsole.MarkupLine(formattedMessage);
+      }
     }
 
     /// <summary>
@@ -23,7 +37,19 @@ namespace Shell
     /// <param name="message">The warning message to display</param>
     public static void Warning(string message)
     {
-      AnsiConsole.MarkupLine($"[yellow]Warning: {message}[/]");
+      var formattedMessage = $"[yellow]Warning: {message}[/]";
+
+      if (_captureBuffer != null)
+      {
+        // Only capture to file, don't display to console
+        var plainText = Markup.Remove(formattedMessage);
+        _captureBuffer.AppendLine(plainText);
+      }
+      else
+      {
+        // Normal console output
+        AnsiConsole.MarkupLine(formattedMessage);
+      }
     }
 
     /// <summary>
@@ -32,7 +58,19 @@ namespace Shell
     /// <param name="message">The error message to display</param>
     public static void Error(string message)
     {
-      AnsiConsole.MarkupLine($"[red]Error: {message}[/]");
+      var formattedMessage = $"[red]Error: {message}[/]";
+
+      if (_captureBuffer != null)
+      {
+        // Only capture to file, don't display to console
+        var plainText = Markup.Remove(formattedMessage);
+        _captureBuffer.AppendLine(plainText);
+      }
+      else
+      {
+        // Normal console output
+        AnsiConsole.MarkupLine(formattedMessage);
+      }
     }
 
     /// <summary>
@@ -42,7 +80,7 @@ namespace Shell
     /// <returns>The user's input as a string, or empty string if no input available</returns>
     public static string Ask(string prompt)
     {
-      
+
       return AnsiConsole.Prompt(new TextPrompt<string>($"{prompt}"));
     }
 
@@ -54,6 +92,7 @@ namespace Shell
     /// <param name="context">Optional context information about where the exception occurred</param>
     public static void Exception(Exception exception, string? context = null)
     {
+      // Exceptions should always be displayed to console, even during redirection
       AnsiConsole.WriteLine();
       AnsiConsole.MarkupLine("[red]An exception occurred:[/]");
 
@@ -72,7 +111,19 @@ namespace Shell
     /// <param name="message">The success message to display</param>
     public static void Success(string message)
     {
-      AnsiConsole.MarkupLine($"[green]✓ {message}[/]");
+      var formattedMessage = $"[green]✓ {message}[/]";
+
+      if (_captureBuffer != null)
+      {
+        // Only capture to file, don't display to console
+        var plainText = Markup.Remove(formattedMessage);
+        _captureBuffer.AppendLine(plainText);
+      }
+      else
+      {
+        // Normal console output
+        AnsiConsole.MarkupLine(formattedMessage);
+      }
     }
 
     /// <summary>
@@ -82,7 +133,19 @@ namespace Shell
     public static void Debug(string message)
     {
 #if DEBUG
-      AnsiConsole.MarkupLine($"[dim]DEBUG: {message}[/]");
+      var formattedMessage = $"[dim]DEBUG: {message}[/]";
+
+      if (_captureBuffer != null)
+      {
+        // Only capture to file, don't display to console
+        var plainText = Markup.Remove(formattedMessage);
+        _captureBuffer.AppendLine(plainText);
+      }
+      else
+      {
+        // Normal console output
+        AnsiConsole.MarkupLine(formattedMessage);
+      }
 #endif
     }
 
@@ -99,7 +162,16 @@ namespace Shell
     /// </summary>
     public static void NewLine()
     {
-      AnsiConsole.WriteLine();
+      if (_captureBuffer != null)
+      {
+        // Only capture to file, don't display to console
+        _captureBuffer.AppendLine();
+      }
+      else
+      {
+        // Normal console output
+        AnsiConsole.WriteLine();
+      }
     }
 
     /// <summary>
@@ -109,7 +181,41 @@ namespace Shell
     /// <param name="length">The length of the separator line (default: 50)</param>
     public static void Separator(char character = '-', int length = 50)
     {
-      AnsiConsole.MarkupLine($"[dim]{new string(character, length)}[/]");
+      var formattedMessage = $"[dim]{new string(character, length)}[/]";
+
+      if (_captureBuffer != null)
+      {
+        // Only capture to file, don't display to console
+        var plainText = Markup.Remove(formattedMessage);
+        _captureBuffer.AppendLine(plainText);
+      }
+      else
+      {
+        // Normal console output
+        AnsiConsole.MarkupLine(formattedMessage);
+      }
+    }
+
+    /// <summary>
+    /// Starts capturing output to a buffer for file redirection.
+    /// </summary>
+    public static void StartCapture()
+    {
+      _captureBuffer = new StringBuilder();
+    }
+
+    /// <summary>
+    /// Stops capturing output and returns the captured text.
+    /// </summary>
+    /// <returns>The captured plain text output</returns>
+    public static string StopCapture()
+    {
+      if (_captureBuffer == null)
+        return string.Empty;
+
+      var capturedText = _captureBuffer.ToString();
+      _captureBuffer = null;
+      return capturedText;
     }
   }
 }

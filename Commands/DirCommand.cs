@@ -16,11 +16,13 @@ public class DirCommand : ICommand
             var dirInfo = new DirectoryInfo(targetPath);
             if (dirInfo.Exists)
             {
-                var table = new Table();
-                table.AddColumn("Name");
-                table.AddColumn("Type");
-                table.AddColumn("Size");
-                table.AddColumn("Modified");
+                var table = new Grid();
+                table.AddColumn();
+                table.AddColumn();
+                table.AddColumn();
+                table.AddColumn();
+                
+                table.AddRow("Name", "Type", "Size", "Modified");
 
                 foreach (var item in dirInfo.GetFileSystemInfos().OrderBy(x => x.Name))
                 {
