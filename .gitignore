@@ -4,3 +4,6 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 .junie/
+.vsCode/
+PROJECT_CONTEXT.md
+.idea/
