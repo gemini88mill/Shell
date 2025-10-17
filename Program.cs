@@ -18,6 +18,7 @@ var commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase
     ["dir"] = new DirCommand(),
     ["pwd"] = new PwdCommand(),
     ["cd"] = new CdCommand(),
+    ["ping"] = new PingCommand(),
 };
 
 // Register aliases for all commands
