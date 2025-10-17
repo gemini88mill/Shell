@@ -21,7 +21,6 @@ var commands = new Dictionary<string, ICommand>(StringComparer.OrdinalIgnoreCase
 // Register aliases for all commands
 foreach (var cmd in commands.Values.ToList())
 {
-    if (cmd.Aliases is null) continue;
     foreach (var alias in cmd.Aliases)
     {
         if (!string.IsNullOrWhiteSpace(alias) && !commands.ContainsKey(alias))
